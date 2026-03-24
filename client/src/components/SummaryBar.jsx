@@ -2,7 +2,11 @@ import { Package, DollarSign, Hash } from "lucide-react";
 import { useProductStore } from "../store";
 
 export default function SummaryBar() {
-  const summary = useProductStore((s) => s.summary);
+  const summary = useProductStore((s) => s.summary) ?? {
+    totalProducts: 0,
+    totalQuantity: 0,
+    totalAmount: 0,
+  };
   const fmt = (n) =>
     new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
