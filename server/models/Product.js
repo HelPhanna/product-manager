@@ -1,58 +1,58 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Product name is required"],
+      required: [true, 'Product name is required'],
       trim: true,
     },
     description: {
       type: String,
       trim: true,
-      default: "",
+      default: '',
     },
     price: {
       type: Number,
-      required: [true, "Price is required"],
-      min: [0, "Price cannot be negative"],
+      required: [true, 'Price is required'],
+      min: [0, 'Price must be non-negative'],
     },
     quantity: {
       type: Number,
-      required: [true, "Quantity is required"],
-      min: [0, "Quantity cannot be negative"],
+      required: [true, 'Quantity is required'],
+      min: [0, 'Quantity must be non-negative'],
       default: 0,
-      validate: {
-        validator: (v) => Number.isInteger(v) && v >= 0,
-        message: "Quantity must be a non-negative whole number",
-      },
     },
+    // Auto-calculated: price * quantity
     amount: {
       type: Number,
       default: 0,
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      required: [true, "Category is required"],
+      ref: 'Category',
+      required: [true, 'Category is required'],
     },
-    // Cloudinary secure URL
     image: {
       type: String,
       default: null,
     },
-    // Cloudinary public_id — needed to delete old images on update/delete
-    imagePublicId: {
-      type: String,
-      default: null,
-    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-productSchema.pre("save", function (next) {
+// Auto-calculate amount before saving
+productSchema.pre('save', function (next) {
   this.amount = this.price * this.quantity;
   next();
 });
 
-module.exports = mongoose.model("Product", productSchema);
+productSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  if (update.price !== undefined || update.quantity !== undefined) {
+    // Will be handled in route
+  }
+  next();
+});
+
+module.exports = mongoose.model('Product', productSchema);

@@ -1,14 +1,14 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X, Image, Calculator, Upload } from "lucide-react";
+import { X, Upload, Image, Calculator } from "lucide-react";
 import { useProductStore, useCategoryStore } from "../store";
 import toast from "react-hot-toast";
 
 export default function ProductModal({ product, onClose }) {
   const isEdit = !!product;
   const { createProduct, updateProduct } = useProductStore();
-  const categories = useCategoryStore((s) => s.categories) ?? [];
-  const fileInputRef = useRef(null);
+  const categories = useCategoryStore((s) => s.categories);
+  const fileRef = useRef(null);
 
   const [form, setForm] = useState({
     name: product?.name || "",
@@ -16,10 +16,9 @@ export default function ProductModal({ product, onClose }) {
     price: product?.price || "",
     quantity: product?.quantity || "",
     category: product?.category?._id || product?.category || "",
-    image: product?.image || "",
   });
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(product?.image || "");
+  const [imagePreview, setImagePreview] = useState(product?.image || null);
   const [saving, setSaving] = useState(false);
 
   const amount = (
@@ -29,28 +28,11 @@ export default function ProductModal({ product, onClose }) {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleUrlChange = (e) => {
-    setForm({ ...form, image: e.target.value });
-    setImagePreview(e.target.value);
-    setImageFile(null);
-  };
-
-  const handleFileChange = (e) => {
+  const handleImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
-    setForm({ ...form, image: "" });
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (!file || !file.type.startsWith("image/"))
-      return toast.error("Only image files are allowed");
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setForm({ ...form, image: "" });
   };
 
   const handleSubmit = async (e) => {
@@ -64,24 +46,15 @@ export default function ProductModal({ product, onClose }) {
 
     setSaving(true);
     try {
-      // Build FormData so the file is sent as multipart
-      const payload = new FormData();
-      payload.append("name", form.name);
-      payload.append("description", form.description);
-      payload.append("price", form.price);
-      payload.append("quantity", form.quantity);
-      payload.append("category", form.category);
-      if (imageFile) {
-        payload.append("image", imageFile);
-      } else if (form.image) {
-        payload.append("image", form.image);
-      }
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      if (imageFile) fd.append("image", imageFile);
 
       if (isEdit) {
-        await updateProduct(product._id, payload);
+        await updateProduct(product._id, fd);
         toast.success("Product updated!");
       } else {
-        await createProduct(payload);
+        await createProduct(fd);
         toast.success("Product created!");
       }
       onClose();
@@ -120,20 +93,16 @@ export default function ProductModal({ product, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Image */}
+          {/* Image Upload */}
           <div>
-            <label className="label">Image</label>
-
-            {/* Drop zone / preview */}
+            <label className="label">Product Image</label>
             <div
-              className="mt-1 h-40 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors relative overflow-hidden"
+              className="relative h-40 rounded-xl border-2 border-dashed cursor-pointer overflow-hidden group transition-colors"
               style={{
                 borderColor: "var(--border-input)",
                 backgroundColor: "var(--bg-input)",
               }}
-              onClick={() => fileInputRef.current.click()}
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileRef.current?.click()}
             >
               {imagePreview ? (
                 <>
@@ -141,64 +110,38 @@ export default function ProductModal({ product, onClose }) {
                     src={imagePreview}
                     alt="preview"
                     className="w-full h-full object-contain p-2"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Upload size={16} className="text-white" />
-                    <span className="text-white text-xs font-medium">
-                      Change image
-                    </span>
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+                  >
+                    <Upload size={24} className="text-white" />
                   </div>
                 </>
               ) : (
-                <>
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                   <Image size={32} style={{ color: "var(--text-faint)" }} />
                   <span
                     className="text-xs"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    Click or drag & drop to upload
+                    Click to upload image
                   </span>
                   <span
                     className="text-xs"
                     style={{ color: "var(--text-faint)" }}
                   >
-                    JPEG, PNG, GIF, WEBP — max 5MB
+                    PNG, JPG, WEBP up to 5MB
                   </span>
-                </>
+                </div>
               )}
             </div>
             <input
-              ref={fileInputRef}
+              ref={fileRef}
               type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
+              accept="image/*"
               className="hidden"
-              onChange={handleFileChange}
-            />
-
-            {/* OR divider */}
-            <div className="flex items-center gap-2 my-3">
-              <div
-                className="flex-1 h-px"
-                style={{ backgroundColor: "var(--border-base)" }}
-              />
-              <span className="text-xs" style={{ color: "var(--text-faint)" }}>
-                or paste a URL
-              </span>
-              <div
-                className="flex-1 h-px"
-                style={{ backgroundColor: "var(--border-base)" }}
-              />
-            </div>
-
-            <input
-              name="image"
-              value={form.image}
-              onChange={handleUrlChange}
-              placeholder="https://example.com/image.jpg"
-              className="input-field"
+              onChange={handleImage}
             />
           </div>
 
