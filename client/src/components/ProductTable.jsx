@@ -1,8 +1,146 @@
 import { useState } from "react";
-import { Edit2, Trash2, Package } from "lucide-react";
+import {
+  Edit2,
+  Trash2,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useProductStore } from "../store";
 import toast from "react-hot-toast";
 import ProductModal from "./ProductModal";
+
+export function Pagination() {
+  const { pagination, fetchProducts, setPage } = useProductStore();
+  const { page, pages, total, limit } = pagination;
+
+  const from = total === 0 ? 0 : (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
+
+  const go = (p) => {
+    setPage(p);
+    fetchProducts({ page: p });
+  };
+
+  // Build page numbers: show up to 5 around current
+  const range = [];
+  const delta = 2;
+  for (
+    let i = Math.max(1, page - delta);
+    i <= Math.min(pages, page + delta);
+    i++
+  ) {
+    range.push(i);
+  }
+
+  return (
+    <div
+      className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+      style={{ borderTop: "1px solid var(--border-base)" }}
+    >
+      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+        {from}–{to} of {total} products
+      </span>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => go(page - 1)}
+          disabled={page === 1}
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+          style={{
+            backgroundColor: "var(--bg-muted)",
+            border: "1px solid var(--border-input)",
+          }}
+        >
+          <ChevronLeft size={13} style={{ color: "var(--text-secondary)" }} />
+        </button>
+
+        {range[0] > 1 && (
+          <>
+            <button
+              onClick={() => go(1)}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors"
+              style={{
+                backgroundColor: "var(--bg-muted)",
+                border: "1px solid var(--border-input)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              1
+            </button>
+            {range[0] > 2 && (
+              <span
+                className="text-xs px-1"
+                style={{ color: "var(--text-faint)" }}
+              >
+                …
+              </span>
+            )}
+          </>
+        )}
+
+        {range.map((p) => (
+          <button
+            key={p}
+            onClick={() => go(p)}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-medium transition-colors"
+            style={
+              p === page
+                ? {
+                    backgroundColor: "var(--accent)",
+                    border: "1px solid var(--accent)",
+                    color: "#fff",
+                  }
+                : {
+                    backgroundColor: "var(--bg-muted)",
+                    border: "1px solid var(--border-input)",
+                    color: "var(--text-secondary)",
+                  }
+            }
+          >
+            {p}
+          </button>
+        ))}
+
+        {range[range.length - 1] < pages && (
+          <>
+            {range[range.length - 1] < pages - 1 && (
+              <span
+                className="text-xs px-1"
+                style={{ color: "var(--text-faint)" }}
+              >
+                …
+              </span>
+            )}
+            <button
+              onClick={() => go(pages)}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors"
+              style={{
+                backgroundColor: "var(--bg-muted)",
+                border: "1px solid var(--border-input)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              {pages}
+            </button>
+          </>
+        )}
+
+        <button
+          onClick={() => go(page + 1)}
+          disabled={page === pages}
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+          style={{
+            backgroundColor: "var(--bg-muted)",
+            border: "1px solid var(--border-input)",
+          }}
+        >
+          <ChevronRight size={13} style={{ color: "var(--text-secondary)" }} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function ProductTable({ products }) {
   const headerStyle = {
@@ -43,6 +181,8 @@ export default function ProductTable({ products }) {
           />
         ))}
       </div>
+
+      <Pagination />
     </div>
   );
 }

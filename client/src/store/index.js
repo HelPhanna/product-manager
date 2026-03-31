@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import api from "../lib/axios";
 
-const API = "/api";
-
 // ── Theme Store ──────────────────────────────────────────
 export const useThemeStore = create((set, get) => ({
   theme: localStorage.getItem("theme") || "dark",
@@ -30,7 +28,7 @@ export const useCategoryStore = create((set, get) => ({
   fetchCategories: async () => {
     set({ loading: true, error: null });
     try {
-      const { data } = await api.get(`${API}/categories`);
+      const { data } = await api.get("/api/categories");
       set({ categories: data.data, loading: false });
     } catch (err) {
       set({
@@ -41,13 +39,13 @@ export const useCategoryStore = create((set, get) => ({
   },
 
   createCategory: async (payload) => {
-    const { data } = await api.post(`${API}/categories`, payload);
+    const { data } = await api.post("/api/categories", payload);
     set((s) => ({ categories: [...s.categories, data.data] }));
     return data.data;
   },
 
   updateCategory: async (id, payload) => {
-    const { data } = await api.put(`${API}/categories/${id}`, payload);
+    const { data } = await api.put(`/api/categories/${id}`, payload);
     set((s) => ({
       categories: s.categories.map((c) => (c._id === id ? data.data : c)),
     }));
@@ -55,7 +53,7 @@ export const useCategoryStore = create((set, get) => ({
   },
 
   deleteCategory: async (id) => {
-    await api.delete(`${API}/categories/${id}`);
+    await api.delete(`/api/categories/${id}`);
     set((s) => ({ categories: s.categories.filter((c) => c._id !== id) }));
   },
 }));
@@ -64,14 +62,20 @@ export const useCategoryStore = create((set, get) => ({
 export const useProductStore = create((set, get) => ({
   products: [],
   summary: { totalAmount: 0, totalQuantity: 0, totalProducts: 0 },
-  pagination: { total: 0, page: 1, limit: 20, pages: 1 },
+  pagination: { total: 0, page: 1, limit: 10, pages: 1 },
   loading: false,
   error: null,
   search: "",
   selectedCategory: "all",
 
-  setSearch: (search) => set({ search }),
-  setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
+  setSearch: (search) =>
+    set((s) => ({ search, pagination: { ...s.pagination, page: 1 } })),
+  setSelectedCategory: (selectedCategory) =>
+    set((s) => ({
+      selectedCategory,
+      pagination: { ...s.pagination, page: 1 },
+    })),
+  setPage: (page) => set((s) => ({ pagination: { ...s.pagination, page } })),
 
   fetchProducts: async (params = {}) => {
     const state = get();
@@ -85,9 +89,9 @@ export const useProductStore = create((set, get) => ({
       if (search) queryParams.set("search", search);
       if (category && category !== "all") queryParams.set("category", category);
       queryParams.set("page", page);
-      queryParams.set("limit", 20);
+      queryParams.set("limit", 10);
 
-      const { data } = await api.get(`${API}/products?${queryParams}`);
+      const { data } = await api.get(`/api/products?${queryParams}`);
       set({
         products: data.data,
         summary: data.summary,
@@ -102,24 +106,27 @@ export const useProductStore = create((set, get) => ({
     }
   },
 
-  createProduct: async (formData) => {
-    const { data } = await api.post(`${API}/products`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+  // Detects FormData and sets multipart header automatically
+  createProduct: async (payload) => {
+    const isFormData = payload instanceof FormData;
+    const { data } = await api.post("/api/products", payload, {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
     });
     await get().fetchProducts();
     return data.data;
   },
 
-  updateProduct: async (id, formData) => {
-    const { data } = await api.put(`${API}/products/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+  updateProduct: async (id, payload) => {
+    const isFormData = payload instanceof FormData;
+    const { data } = await api.put(`/api/products/${id}`, payload, {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
     });
     await get().fetchProducts();
     return data.data;
   },
 
   deleteProduct: async (id) => {
-    await api.delete(`${API}/products/${id}`);
+    await api.delete(`/api/products/${id}`);
     await get().fetchProducts();
   },
 }));

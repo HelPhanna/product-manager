@@ -1,17 +1,41 @@
 const Product = require("../models/Product");
+const cloudinary = require("../config/cloudinary");
+
+// Helper: upload buffer to Cloudinary and return secure_url + public_id
+const uploadToCloudinary = (buffer, mimetype) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "product-manager",
+        resource_type: "image",
+        format: mimetype.split("/")[1],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve({ url: result.secure_url, public_id: result.public_id });
+      },
+    );
+    stream.end(buffer);
+  });
+};
+
+// Helper: delete image from Cloudinary by public_id
+const deleteFromCloudinary = async (public_id) => {
+  if (!public_id) return;
+  try {
+    await cloudinary.uploader.destroy(public_id);
+  } catch (err) {
+    console.warn("Could not delete old Cloudinary image:", err.message);
+  }
+};
 
 // GET all products with search & filter
 exports.getAllProducts = async (req, res) => {
   try {
-    const { search, category, page = 1, limit = 20 } = req.query;
+    const { search, category, page = 1, limit = 10 } = req.query;
     const query = {};
-
-    if (search) {
-      query.name = { $regex: search, $options: "i" };
-    }
-    if (category && category !== "all") {
-      query.category = category;
-    }
+    if (search) query.name = { $regex: search, $options: "i" };
+    if (category && category !== "all") query.category = category;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [products, total] = await Promise.all([
@@ -76,10 +100,13 @@ exports.createProduct = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Quantity must be 0 or greater" });
 
-    // Convert uploaded file to base64 and save in MongoDB
     if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      productData.image = `data:${req.file.mimetype};base64,${b64}`;
+      const { url, public_id } = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.mimetype,
+      );
+      productData.image = url;
+      productData.imagePublicId = public_id;
     }
 
     productData.amount = price * quantity;
@@ -119,10 +146,14 @@ exports.updateProduct = async (req, res) => {
           .json({ success: false, message: "Quantity must be 0 or greater" });
     }
 
-    // Convert new uploaded file to base64
     if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      updateData.image = `data:${req.file.mimetype};base64,${b64}`;
+      await deleteFromCloudinary(existing.imagePublicId);
+      const { url, public_id } = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.mimetype,
+      );
+      updateData.image = url;
+      updateData.imagePublicId = public_id;
     }
 
     const price = parseFloat(updateData.price ?? existing.price);
@@ -133,7 +164,6 @@ exports.updateProduct = async (req, res) => {
       new: true,
       runValidators: true,
     }).populate("category", "name color");
-
     res.json({ success: true, data: product });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -148,6 +178,7 @@ exports.deleteProduct = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
+    await deleteFromCloudinary(product.imagePublicId);
     res.json({ success: true, message: "Product deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
