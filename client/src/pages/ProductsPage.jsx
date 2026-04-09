@@ -1,6 +1,16 @@
+// ============================================================
+// 📁 src/pages/ProductsPage.jsx  (updated — RBAC-aware UI)
+//
+// Changes:
+//   - "Add Product" button hidden for viewers
+//   - Empty state "Add your first product" button hidden for viewers
+//   - Viewers see a "View Only" badge so they understand their role
+// ============================================================
+
 import { useState } from "react";
-import { Plus, Loader2, PackageX } from "lucide-react";
+import { Plus, Loader2, PackageX, Eye } from "lucide-react";
 import { useProductStore } from "../store";
+import { useAuthStore } from "../store/authStore";
 import SummaryBar from "../components/SummaryBar";
 import SearchFilterBar from "../components/SearchFilterBar";
 import ProductTable from "../components/ProductTable";
@@ -9,6 +19,9 @@ import ProductModal from "../components/ProductModal";
 export default function ProductsPage() {
   const { products = [], loading } = useProductStore();
   const [showCreate, setShowCreate] = useState(false);
+
+  // Read isAdmin from auth store
+  const isAdmin = useAuthStore((s) => s.isAdmin);
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-8">
@@ -27,10 +40,31 @@ export default function ProductsPage() {
             Product Management
           </h1>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary">
-          <Plus size={15} />
-          Add Product
-        </button>
+
+        <div className="flex items-center gap-3">
+          {/* View-only badge for viewers — helpful UX hint */}
+          {!isAdmin() && (
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+              style={{
+                backgroundColor: "rgba(251,191,36,0.10)",
+                border: "1px solid rgba(251,191,36,0.25)",
+                color: "var(--amber)",
+              }}
+            >
+              <Eye size={12} />
+              View Only
+            </div>
+          )}
+
+          {/* Add Product — admin only */}
+          {isAdmin() && (
+            <button onClick={() => setShowCreate(true)} className="btn-primary">
+              <Plus size={15} />
+              Add Product
+            </button>
+          )}
+        </div>
       </div>
 
       <SummaryBar />
@@ -60,13 +94,16 @@ export default function ProductsPage() {
           <p className="text-sm mt-1" style={{ color: "var(--text-faint)" }}>
             Try adjusting your search or filters
           </p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="btn-primary mt-6"
-          >
-            <Plus size={14} />
-            Add your first product
-          </button>
+          {/* Only admins can add products */}
+          {isAdmin() && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="btn-primary mt-6"
+            >
+              <Plus size={14} />
+              Add your first product
+            </button>
+          )}
         </div>
       ) : (
         <ProductTable products={products} />
