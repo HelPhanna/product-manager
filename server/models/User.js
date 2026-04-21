@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: [true, "Username is required"],
-      unique: true,        // no two users share a username
+      unique: true, // no two users share a username
       trim: true,
       minlength: [3, "Username must be at least 3 characters"],
       maxlength: [30, "Username cannot exceed 30 characters"],
@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Email is required"],
       unique: true,
-      lowercase: true,     // always store email in lowercase
+      lowercase: true, // always store email in lowercase
       trim: true,
     },
 
@@ -62,7 +62,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false,       // hidden from query results unless explicitly requested
+      select: false, // hidden from query results unless explicitly requested
     },
 
     // ─────────────────────────────────────────────
@@ -86,7 +86,7 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { timestamps: true } // adds createdAt + updatedAt automatically
+  { timestamps: true }, // adds createdAt + updatedAt automatically
 );
 
 // ─────────────────────────────────────────────
@@ -108,7 +108,7 @@ const userSchema = new mongoose.Schema(
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next(); // skip if password unchanged
 
-  const salt = await bcrypt.genSalt(10);           // generate random salt
+  const salt = await bcrypt.genSalt(10); // generate random salt
   this.password = await bcrypt.hash(this.password, salt); // hash the password
   next();
 });

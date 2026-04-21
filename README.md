@@ -1,4 +1,4 @@
-# ProductVault — Product Management System
+# Steav-Store — Product Management System
 
 A full-stack product management app built with **Express**, **React**, **Tailwind CSS**, **Mongoose**, and **Zustand**.
 
