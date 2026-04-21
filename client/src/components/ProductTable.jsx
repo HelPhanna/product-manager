@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useProductStore } from "../store";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/authStore";
 import ProductModal from "./ProductModal";
 
 export function Pagination() {
@@ -189,6 +190,8 @@ export default function ProductTable({ products }) {
 
 function ProductRow({ product, last }) {
   const deleteProduct = useProductStore((s) => s.deleteProduct);
+  // Read isAdmin from auth store to conditionally show edit/delete
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const [showEdit, setShowEdit] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -319,31 +322,37 @@ function ProductRow({ product, last }) {
           </span>
         </div>
 
-        {/* Actions */}
+        {/* Actions — only shown to admins (RBAC in UI)
+            isAdmin() read from authStore — viewers see nothing here.
+            Note: This is UX-only. The real security is on the server. */}
         <div className="w-16 flex-shrink-0 flex items-center justify-end gap-1">
-          <button
-            onClick={() => setShowEdit(true)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-            style={{
-              backgroundColor: "var(--bg-muted)",
-              border: "1px solid var(--border-input)",
-            }}
-            title="Edit"
-          >
-            <Edit2 size={12} style={{ color: "var(--text-secondary)" }} />
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-            style={{
-              backgroundColor: "rgba(251,113,133,0.1)",
-              border: "1px solid rgba(251,113,133,0.2)",
-            }}
-            title="Delete"
-          >
-            <Trash2 size={12} style={{ color: "var(--red)" }} />
-          </button>
+          {isAdmin() && (
+            <>
+              <button
+                onClick={() => setShowEdit(true)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                style={{
+                  backgroundColor: "var(--bg-muted)",
+                  border: "1px solid var(--border-input)",
+                }}
+                title="Edit"
+              >
+                <Edit2 size={12} style={{ color: "var(--text-secondary)" }} />
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                style={{
+                  backgroundColor: "rgba(251,113,133,0.1)",
+                  border: "1px solid rgba(251,113,133,0.2)",
+                }}
+                title="Delete"
+              >
+                <Trash2 size={12} style={{ color: "var(--red)" }} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
