@@ -26,15 +26,9 @@ const ROLES = {
   SUPER_ADMIN: "super_admin",
   ADMIN: "admin",
   USER: "user",
-  VIEWER: "viewer",
 };
 
 const PUBLIC_ROLES = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.USER];
-
-const normalizeRole = (role) => {
-  if (role === ROLES.VIEWER) return ROLES.USER;
-  return role;
-};
 
 const userSchema = new mongoose.Schema(
   {
@@ -83,7 +77,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: [...PUBLIC_ROLES, ROLES.VIEWER],
+        values: PUBLIC_ROLES,
         message: "Role must be 'super_admin', 'admin', or 'user'",
       },
       default: ROLES.USER,
@@ -141,30 +135,15 @@ userSchema.methods.toPublicJSON = function () {
     id: this._id,
     username: this.username,
     email: this.email,
-    role: normalizeRole(this.role),
+    role: this.role,
     isActive: this.isActive,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };
 };
 
-userSchema.pre("findOneAndUpdate", function (next) {
-  const update = this.getUpdate();
-
-  if (update?.role) {
-    update.role = normalizeRole(update.role);
-  }
-
-  if (update?.$set?.role) {
-    update.$set.role = normalizeRole(update.$set.role);
-  }
-
-  next();
-});
-
 // Export ROLES so other files can use the constants
 // instead of typing raw strings like "admin" (typo-prone)
 module.exports = mongoose.model("User", userSchema);
 module.exports.ROLES = ROLES;
 module.exports.PUBLIC_ROLES = PUBLIC_ROLES;
-module.exports.normalizeRole = normalizeRole;

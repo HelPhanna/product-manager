@@ -17,7 +17,6 @@
 // ============================================================
 
 const jwt = require("jsonwebtoken");
-const { normalizeRole } = require("../models/User");
 
 // ─────────────────────────────────────────────
 // 🛡️ MIDDLEWARE 1: authenticate
@@ -62,7 +61,7 @@ exports.authenticate = (req, res, next) => {
     // Now any route handler after this middleware can use req.user
     req.user = {
       userId: decoded.userId,
-      role: normalizeRole(decoded.role),
+      role: decoded.role,
     };
 
     next(); // pass control to the next middleware / route handler

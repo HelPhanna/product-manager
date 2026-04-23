@@ -12,7 +12,7 @@
 
 const jwt = require("jsonwebtoken");
 const User = require("../../shared/models/User");
-const { ROLES, normalizeRole } = require("../../shared/models/User");
+const { ROLES } = require("../../shared/models/User");
 const { registerSchema, loginSchema } = require("./authValidator");
 
 const shouldBeSuperAdmin = (email) =>
@@ -39,7 +39,7 @@ const shouldBeSuperAdmin = (email) =>
 // ─────────────────────────────────────────────
 const generateToken = (userId, role) => {
   return jwt.sign(
-    { userId, role: normalizeRole(role) }, // payload: what we embed in the token
+    { userId, role }, // payload: what we embed in the token
     process.env.JWT_SECRET,       // secret: used to sign + verify
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" } // expiry
   );
@@ -159,7 +159,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    if (shouldBeSuperAdmin(user.email) && normalizeRole(user.role) !== ROLES.SUPER_ADMIN) {
+    if (shouldBeSuperAdmin(user.email) && user.role !== ROLES.SUPER_ADMIN) {
       user.role = ROLES.SUPER_ADMIN;
       await user.save();
     }

@@ -3,16 +3,6 @@ import { persist } from "zustand/middleware";
 import toast from "react-hot-toast";
 import api from "../../../shared/api/axios";
 
-const normalizeRole = (role) => (role === "viewer" ? "user" : role);
-
-const normalizeUser = (user) =>
-  user
-    ? {
-        ...user,
-        role: normalizeRole(user.role),
-      }
-    : null;
-
 export const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -35,7 +25,7 @@ export const useAuthStore = create(
           });
 
           set({
-            user: normalizeUser(data.user),
+            user: data.user,
             token: data.token,
             loading: false,
           });
@@ -59,7 +49,7 @@ export const useAuthStore = create(
           const { data } = await api.post("/api/auth/login", { email, password });
 
           set({
-            user: normalizeUser(data.user),
+            user: data.user,
             token: data.token,
             loading: false,
           });
@@ -75,7 +65,7 @@ export const useAuthStore = create(
         }
       },
 
-      setUser: (user) => set({ user: normalizeUser(user) }),
+      setUser: (user) => set({ user }),
 
       logout: () => {
         set({ user: null, token: null });
@@ -85,13 +75,13 @@ export const useAuthStore = create(
     {
       name: "auth-storage",
       partialize: (state) => ({
-        user: normalizeUser(state.user),
+        user: state.user,
         token: state.token,
       }),
       merge: (persistedState, currentState) => ({
         ...currentState,
         ...persistedState,
-        user: normalizeUser(persistedState?.user ?? currentState.user),
+        user: persistedState?.user ?? currentState.user,
       }),
     }
   )

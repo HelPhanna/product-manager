@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("../../shared/models/User");
-const { ROLES, normalizeRole } = require("../../shared/models/User");
+const { ROLES } = require("../../shared/models/User");
 const { updateUserRoleSchema } = require("./userValidator");
 
 exports.listUsers = async (req, res) => {
@@ -43,7 +43,7 @@ exports.updateUserRole = async (req, res) => {
       });
     }
 
-    if (normalizeRole(targetUser.role) === ROLES.SUPER_ADMIN) {
+    if (targetUser.role === ROLES.SUPER_ADMIN) {
       return res.status(403).json({
         success: false,
         message: "Super admin role cannot be changed",
@@ -81,7 +81,7 @@ exports.deleteUser = async (req, res) => {
       });
     }
 
-    if (normalizeRole(targetUser.role) === ROLES.SUPER_ADMIN) {
+    if (targetUser.role === ROLES.SUPER_ADMIN) {
       return res.status(403).json({
         success: false,
         message: "Super admin account cannot be deleted",
