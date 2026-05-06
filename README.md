@@ -1,120 +1,169 @@
-# Steav-Store — Product Management System
+# Product Manager
 
-A full-stack product management app built with **Express**, **React**, **Tailwind CSS**, **Mongoose**, and **Zustand**.
+Developer handover guide for quickly cloning, running, and continuing this project.
 
-## Features
+## 1. What this project is
 
-- ✅ Product CRUD (create, read, update, delete)
-- ✅ Category management with color labels
-- ✅ Search products by name (live search)
-- ✅ Filter by category (default: All)
-- ✅ Auto-calculated amount = price × quantity
-- ✅ Image upload from device (max 5MB)
-- ✅ Summary dashboard (total products, quantity, amount)
-- ✅ Zustand global state management
-- ✅ Dark glass UI with Tailwind CSS
+Full-stack product management app:
+- Frontend: React + Vite + Tailwind + Zustand
+- Backend: Node.js + Express + MongoDB (Mongoose)
+- Auth: JWT with `admin` / `viewer` roles
+- Media: Cloudinary upload support via Multer
 
-## Tech Stack
+## 2. Repository structure
 
-| Layer    | Technology                    |
-| -------- | ----------------------------- |
-| Backend  | Node.js + Express             |
-| Database | MongoDB + Mongoose            |
-| Upload   | Multer                        |
-| Frontend | React + Vite                  |
-| Styling  | Tailwind CSS                  |
-| State    | Zustand                       |
-| UI       | Lucide React, React Hot Toast |
+```text
+product-manager/
+  client/                 # React app (Vite)
+  server/                 # Express API
+  package.json            # root scripts to run both apps
+```
 
-## Setup & Run
+Important backend files:
+- `server/index.js` - app entry, security middleware, route mounting
+- `server/config/db.js` - MongoDB connection
+- `server/routes/*.js` - API routes
+- `server/controllers/*.js` - business logic
+- `server/middleware/authMiddleware.js` - JWT auth + role authorization
+- `server/middleware/upload.js` - Multer upload handling
 
-### Prerequisites
+Important frontend files:
+- `client/src/App.jsx` - route setup (`/login`, `/dashboard`)
+- `client/src/lib/axios.js` - API client + JWT interceptors
+- `client/src/store/authStore.js` - auth state
+- `client/src/store/index.js` - product/category stores
 
-- Node.js v18+
-- MongoDB running locally (or provide a MongoDB Atlas URI)
+## 3. Prerequisites
 
-### 1. Install dependencies
+- Node.js 18+
+- npm
+- MongoDB (local or Atlas)
+- Cloudinary account (for image upload)
+
+## 4. First-time setup
+
+### Clone and install
 
 ```bash
+git clone <your-repo-url>
+cd product-manager
 npm run install:all
 ```
 
-### 2. Configure environment
+### Configure backend env
+
+Copy example:
 
 ```bash
 cp server/.env.example server/.env
 ```
 
-Edit `server/.env`:
+Then update `server/.env` values:
 
-```
+```env
+MONGODB_URI=your_mongodb_connection_string_here
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/product-manager
+CLIENT_URL=http://localhost:5173
+
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name_here
+CLOUDINARY_API_KEY=your_cloudinary_api_key_here
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret_here
+
+JWT_SECRET=your_super_secret_jwt_key_min_32_characters_here
+JWT_EXPIRES_IN=7d
 ```
 
-### 3. Run development servers
+### Configure frontend env
+
+Create `client/.env`:
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+## 5. Run in development
+
+From project root:
 
 ```bash
 npm run dev
 ```
 
-- **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:5000
+Services:
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
 
-## API Endpoints
+## 6. Available scripts
 
-### Products
+Root (`package.json`):
+- `npm run dev` - run client + server together
+- `npm run server` - run backend only
+- `npm run client` - run frontend only
+- `npm run install:all` - install root + server + client dependencies
 
-| Method | URL                 | Description                              |
-| ------ | ------------------- | ---------------------------------------- |
-| GET    | `/api/products`     | List all (supports `?search=&category=`) |
-| POST   | `/api/products`     | Create product (multipart/form-data)     |
-| PUT    | `/api/products/:id` | Update product                           |
-| DELETE | `/api/products/:id` | Delete product                           |
+Backend (`server/package.json`):
+- `npm run dev` - run with nodemon
+- `npm start` - run with node
 
-### Categories
+Frontend (`client/package.json`):
+- `npm run dev`
+- `npm run build`
+- `npm run preview`
 
-| Method | URL                   | Description         |
-| ------ | --------------------- | ------------------- |
-| GET    | `/api/categories`     | List all categories |
-| POST   | `/api/categories`     | Create category     |
-| PUT    | `/api/categories/:id` | Update category     |
-| DELETE | `/api/categories/:id` | Delete category     |
+## 7. Auth and permissions
 
-## Project Structure
+- Register endpoint creates users as `viewer` by default.
+- JWT token is stored in Zustand persisted storage (`auth-storage`).
+- Axios request interceptor attaches token to `Authorization` header.
+- Axios response interceptor auto-logs out on `401`.
 
-```
-product-manager/
-├── package.json              # Root runner (concurrently)
-├── server/
-│   ├── index.js              # Express entry point
-│   ├── .env.example
-│   ├── models/
-│   │   ├── Product.js        # Mongoose model (auto-calc amount)
-│   │   └── Category.js
-│   ├── routes/
-│   │   ├── products.js
-│   │   └── categories.js
-│   ├── middleware/
-│   │   └── upload.js         # Multer config
-│   └── uploads/              # Stored images
-└── client/
-    ├── vite.config.js
-    ├── tailwind.config.js
-    └── src/
-        ├── App.jsx
-        ├── store/index.js    # Zustand stores
-        ├── hooks/
-        │   └── useDebounce.js
-        ├── components/
-        │   ├── Navbar.jsx
-        │   ├── SummaryBar.jsx
-        │   ├── SearchFilterBar.jsx
-        │   ├── ProductCard.jsx
-        │   ├── ProductModal.jsx
-        │   └── CategoryModal.jsx
-        └── pages/
-            └── ProductsPage.jsx
-```
+Role policy in backend routes:
+- Products and categories `GET`: authenticated `admin` and `viewer`
+- Products and categories `POST/PUT/DELETE`: `admin` only
 
-## Auth
+## 8. API overview
+
+Health:
+- `GET /api/health`
+
+Auth:
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me` (protected)
+
+Products:
+- `GET /api/products` (supports query: `search`, `category`, `page`, `limit`)
+- `GET /api/products/:id`
+- `POST /api/products` (admin, supports multipart with `image`)
+- `PUT /api/products/:id` (admin)
+- `DELETE /api/products/:id` (admin)
+
+Categories:
+- `GET /api/categories`
+- `GET /api/categories/:id`
+- `POST /api/categories` (admin)
+- `PUT /api/categories/:id` (admin)
+- `DELETE /api/categories/:id` (admin)
+
+## 9. Common issues
+
+1. CORS error
+- Ensure `CLIENT_URL` in `server/.env` matches your frontend URL exactly.
+
+2. `401 Unauthorized`
+- Token expired or invalid; log in again.
+- Confirm `JWT_SECRET` is set and stable.
+
+3. Mongo connection failure
+- Check `MONGODB_URI` and that MongoDB/Atlas is reachable.
+
+4. Image upload fails
+- Verify Cloudinary env values.
+- Confirm request is `multipart/form-data` with field name `image`.
+
+## 10. Suggested next improvements
+
+- Add automated tests (API + frontend store/unit tests)
+- Add seed script for initial admin user
+- Add Docker setup for one-command onboarding
+- Add CI workflow for lint/test/build

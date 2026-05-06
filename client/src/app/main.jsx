@@ -1,0 +1,29 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
+import App from './App.jsx'
+import '../shared/styles/index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#0e0e23',
+            color: '#e2e2ef',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '12px',
+            fontSize: '13px',
+            fontFamily: 'Sora, sans-serif',
+          },
+          success: { iconTheme: { primary: '#4ade80', secondary: '#07070f' } },
+          error:   { iconTheme: { primary: '#fb7185', secondary: '#07070f' } },
+        }}
+      />
+    </BrowserRouter>
+  </React.StrictMode>,
+)
