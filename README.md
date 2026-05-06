@@ -1,64 +1,65 @@
 # Product Manager
 
-Developer handover guide for quickly cloning, running, and continuing this project.
+Full-stack product management app with role-based authentication, product/category CRUD, and image upload support.
 
-## 1. What this project is
+## Tech Stack
 
-Full-stack product management app:
-- Frontend: React + Vite + Tailwind + Zustand
+- Frontend: React + Vite + Tailwind CSS + Zustand
 - Backend: Node.js + Express + MongoDB (Mongoose)
-- Auth: JWT with `admin` / `viewer` roles
-- Media: Cloudinary upload support via Multer
+- Auth: JWT (`admin` / `viewer`)
+- Uploads: Multer + Cloudinary
 
-## 2. Repository structure
+## Project Structure
 
 ```text
 product-manager/
-  client/                 # React app (Vite)
+  client/                 # React app
   server/                 # Express API
-  package.json            # root scripts to run both apps
+  package.json            # root scripts for running both apps
 ```
 
 Important backend files:
-- `server/index.js` - app entry, security middleware, route mounting
-- `server/config/db.js` - MongoDB connection
-- `server/routes/*.js` - API routes
-- `server/controllers/*.js` - business logic
-- `server/middleware/authMiddleware.js` - JWT auth + role authorization
-- `server/middleware/upload.js` - Multer upload handling
+- `server/src/server.js` - server bootstrap + DB connection
+- `server/src/app/app.js` - middleware + route mounting
+- `server/src/common/config/db.js` - MongoDB connection
+- `server/src/common/middleware/authMiddleware.js` - JWT + role checks
+- `server/src/common/middleware/upload.js` - Multer upload config
+- `server/src/modules/**` - module-based routes/controllers/models
 
 Important frontend files:
-- `client/src/App.jsx` - route setup (`/login`, `/dashboard`)
-- `client/src/lib/axios.js` - API client + JWT interceptors
-- `client/src/store/authStore.js` - auth state
-- `client/src/store/index.js` - product/category stores
+- `client/src/app/App.jsx` - app routes
+- `client/src/shared/lib/apiClient.js` - axios instance + JWT interceptors
+- `client/src/features/auth/store/authStore.js` - auth state
+- `client/src/app/store/index.js` - product/category/theme stores
 
-## 3. Prerequisites
+## Prerequisites
 
 - Node.js 18+
 - npm
 - MongoDB (local or Atlas)
-- Cloudinary account (for image upload)
+- Cloudinary account (for image uploads)
 
-## 4. First-time setup
+## Setup
 
-### Clone and install
+1. Install dependencies (root + server + client):
 
 ```bash
-git clone <your-repo-url>
-cd product-manager
 npm run install:all
 ```
 
-### Configure backend env
+2. Create backend environment file:
 
-Copy example:
+PowerShell:
+```powershell
+Copy-Item server/.env.example server/.env
+```
 
+macOS/Linux:
 ```bash
 cp server/.env.example server/.env
 ```
 
-Then update `server/.env` values:
+3. Update `server/.env`:
 
 ```env
 MONGODB_URI=your_mongodb_connection_string_here
@@ -73,58 +74,54 @@ JWT_SECRET=your_super_secret_jwt_key_min_32_characters_here
 JWT_EXPIRES_IN=7d
 ```
 
-### Configure frontend env
-
-Create `client/.env`:
+4. Create `client/.env`:
 
 ```env
 VITE_API_URL=http://localhost:5000
 ```
 
-## 5. Run in development
+## Run in Development
 
-From project root:
+From the project root:
 
 ```bash
 npm run dev
 ```
 
-Services:
+Local URLs:
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:5000`
+- Health check: `GET http://localhost:5000/api/health`
 
-## 6. Available scripts
+## Available Scripts
 
-Root (`package.json`):
+Root:
 - `npm run dev` - run client + server together
 - `npm run server` - run backend only
 - `npm run client` - run frontend only
-- `npm run install:all` - install root + server + client dependencies
+- `npm run install:all` - install all dependencies
 
-Backend (`server/package.json`):
-- `npm run dev` - run with nodemon
-- `npm start` - run with node
+Server (`server/package.json`):
+- `npm run dev` - start with nodemon
+- `npm start` - start with node
 
-Frontend (`client/package.json`):
+Client (`client/package.json`):
 - `npm run dev`
 - `npm run build`
 - `npm run preview`
 
-## 7. Auth and permissions
+## Authentication & Permissions
 
-- Register endpoint creates users as `viewer` by default.
-- JWT token is stored in Zustand persisted storage (`auth-storage`).
-- Axios request interceptor attaches token to `Authorization` header.
-- Axios response interceptor auto-logs out on `401`.
+- New users are registered as `viewer` by default.
+- JWT is persisted in local storage via Zustand (`auth-storage`).
+- Request interceptor attaches `Authorization: Bearer <token>`.
+- On `401`, client logs out and prompts re-login.
 
-Role policy in backend routes:
-- Products and categories `GET`: authenticated `admin` and `viewer`
-- Products and categories `POST/PUT/DELETE`: `admin` only
+Role policy:
+- `GET` products/categories: authenticated `admin` and `viewer`
+- `POST`/`PUT`/`DELETE` products/categories: `admin` only
 
-## 8. API overview
-
-Health:
-- `GET /api/health`
+## API Overview
 
 Auth:
 - `POST /api/auth/register`
@@ -132,9 +129,9 @@ Auth:
 - `GET /api/auth/me` (protected)
 
 Products:
-- `GET /api/products` (supports query: `search`, `category`, `page`, `limit`)
+- `GET /api/products` (`search`, `category`, `page`, `limit`)
 - `GET /api/products/:id`
-- `POST /api/products` (admin, supports multipart with `image`)
+- `POST /api/products` (admin, multipart with `image`)
 - `PUT /api/products/:id` (admin)
 - `DELETE /api/products/:id` (admin)
 
@@ -145,25 +142,18 @@ Categories:
 - `PUT /api/categories/:id` (admin)
 - `DELETE /api/categories/:id` (admin)
 
-## 9. Common issues
+## Troubleshooting
 
-1. CORS error
-- Ensure `CLIENT_URL` in `server/.env` matches your frontend URL exactly.
+1. CORS errors:
+- Ensure `CLIENT_URL` in `server/.env` exactly matches your frontend URL.
 
-2. `401 Unauthorized`
-- Token expired or invalid; log in again.
-- Confirm `JWT_SECRET` is set and stable.
+2. `401 Unauthorized`:
+- Log in again (token may be expired/invalid).
+- Ensure `JWT_SECRET` is set and unchanged for issued tokens.
 
-3. Mongo connection failure
-- Check `MONGODB_URI` and that MongoDB/Atlas is reachable.
+3. MongoDB connection issues:
+- Verify `MONGODB_URI` and network access to MongoDB/Atlas.
 
-4. Image upload fails
+4. Image upload failures:
 - Verify Cloudinary env values.
-- Confirm request is `multipart/form-data` with field name `image`.
-
-## 10. Suggested next improvements
-
-- Add automated tests (API + frontend store/unit tests)
-- Add seed script for initial admin user
-- Add Docker setup for one-command onboarding
-- Add CI workflow for lint/test/build
+- Ensure request is `multipart/form-data` with field name `image`.
