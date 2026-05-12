@@ -144,6 +144,11 @@ export function Pagination() {
 }
 
 export default function ProductTable({ products }) {
+  const { pagination } = useProductStore();
+  const { limit = 10, total = products.length } = pagination ?? {};
+  const visibleRowCount = total > limit ? limit : Math.max(products.length, 1);
+  const rowsMaxHeight = `min(calc(100vh - 280px), calc(${visibleRowCount} * 76px))`;
+
   const headerStyle = {
     color: "var(--text-muted)",
     borderBottom: "1px solid var(--border-base)",
@@ -152,8 +157,7 @@ export default function ProductTable({ products }) {
 
   return (
     <div
-      className="glass-card rounded-2xl overflow-hidden flex flex-col"
-      style={{ height: "calc(100vh - 120px)", minHeight: "320px" }}
+      className="glass-card rounded-2xl overflow-hidden"
     >
       {/* Sticky header */}
       <div
@@ -171,8 +175,11 @@ export default function ProductTable({ products }) {
 
       {/* Scrollable rows */}
       <div
-        className="overflow-y-auto flex-1"
-        style={{ borderTop: "1px solid var(--border-base)" }}
+        className="overflow-y-auto"
+        style={{
+          borderTop: "1px solid var(--border-base)",
+          maxHeight: rowsMaxHeight,
+        }}
       >
         {products.map((product, i) => (
           <ProductRow
