@@ -6,7 +6,7 @@ Full-stack product management app with role-based authentication, product/catego
 
 - Frontend: React + Vite + Tailwind CSS + Zustand
 - Backend: Node.js + Express + MongoDB (Mongoose)
-- Auth: JWT (`admin` / `viewer`)
+- Auth: JWT in `HttpOnly` cookie (`admin` / `viewer`)
 - Uploads: Multer + Cloudinary
 
 ## Project Structure
@@ -28,7 +28,7 @@ Important backend files:
 
 Important frontend files:
 - `client/src/app/App.jsx` - app routes
-- `client/src/shared/lib/apiClient.js` - axios instance + JWT interceptors
+- `client/src/shared/lib/apiClient.js` - axios instance + cookie credentials
 - `client/src/features/auth/store/authStore.js` - auth state
 - `client/src/app/store/index.js` - product/category/theme stores
 
@@ -72,6 +72,7 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret_here
 
 JWT_SECRET=your_super_secret_jwt_key_min_32_characters_here
 JWT_EXPIRES_IN=7d
+NODE_ENV=development
 ```
 
 4. Create `client/.env`:
@@ -113,9 +114,9 @@ Client (`client/package.json`):
 ## Authentication & Permissions
 
 - New users are registered as `viewer` by default.
-- JWT is persisted in local storage via Zustand (`auth-storage`).
-- Request interceptor attaches `Authorization: Bearer <token>`.
-- On `401`, client logs out and prompts re-login.
+- JWT is stored in an `HttpOnly` auth cookie so the browser can send it securely without exposing it to client-side JavaScript.
+- Client requests use `withCredentials: true`, and auth is restored by calling `GET /api/auth/me`.
+- On `401`, client clears in-memory user state and prompts re-login.
 
 Role policy:
 - `GET` products/categories: authenticated `admin` and `viewer`
@@ -126,6 +127,7 @@ Role policy:
 Auth:
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/logout`
 - `GET /api/auth/me` (protected)
 
 Products:
@@ -146,6 +148,7 @@ Categories:
 
 1. CORS errors:
 - Ensure `CLIENT_URL` in `server/.env` exactly matches your frontend URL.
+- If frontend and backend are on different origins, keep client requests credentialed and make sure the browser accepts the auth cookie.
 
 2. `401 Unauthorized`:
 - Log in again (token may be expired/invalid).

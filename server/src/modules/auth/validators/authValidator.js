@@ -20,7 +20,9 @@ exports.registerSchema = z.object({
 
   role: z
     .nativeEnum(ROLES, {
-      errorMap: () => ({ message: "Role must be 'admin' or 'viewer'" }),
+      errorMap: () => ({
+        message: "Role must be 'super_admin', 'admin', or 'viewer'",
+      }),
     })
     .optional()
     .default(ROLES.VIEWER),

@@ -1,7 +1,18 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { ROLES } = require("../models/User");
 const { registerSchema, loginSchema } = require("../validators/authValidator");
+
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  };
+};
 
 const generateToken = (userId, role) => {
   return jwt.sign(
@@ -9,6 +20,14 @@ const generateToken = (userId, role) => {
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
+};
+
+const attachAuthCookie = (res, token) => {
+  res.cookie("auth_token", token, getCookieOptions());
+};
+
+const clearAuthCookie = (res) => {
+  res.clearCookie("auth_token", getCookieOptions());
 };
 
 exports.register = async (req, res) => {
@@ -40,11 +59,11 @@ exports.register = async (req, res) => {
     const user = await User.create({ username, email, password, role });
 
     const token = generateToken(user._id, user.role);
+    attachAuthCookie(res, token);
 
     res.status(201).json({
       success: true,
       message: "Registration successful",
-      token,
       user: {
         id: user._id,
         username: user.username,
@@ -89,11 +108,11 @@ exports.login = async (req, res) => {
     }
 
     const token = generateToken(user._id, user.role);
+    attachAuthCookie(res, token);
 
     res.json({
       success: true,
       message: "Login successful",
-      token,
       user: {
         id: user._id,
         username: user.username,
@@ -104,6 +123,15 @@ exports.login = async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
+};
+
+exports.logout = async (_req, res) => {
+  clearAuthCookie(res);
+
+  res.json({
+    success: true,
+    message: "Logout successful",
+  });
 };
 
 exports.getMe = async (req, res) => {

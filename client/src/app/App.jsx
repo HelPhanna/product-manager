@@ -6,16 +6,16 @@ import LoginPage from "../features/auth/pages/LoginPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 
 function ProtectedRoute({ children }) {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  if (!isAuthenticated()) {
+  const isAuthenticated = useAuthStore((s) => !!s.user);
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return children;
 }
 
 function PublicOnlyRoute({ children }) {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  if (isAuthenticated()) {
+  const isAuthenticated = useAuthStore((s) => !!s.user);
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -41,10 +41,30 @@ function Background() {
 
 export default function App() {
   const initTheme = useThemeStore((s) => s.initTheme);
+  const checkAuth = useAuthStore((s) => s.checkAuth);
+  const authChecked = useAuthStore((s) => s.authChecked);
+  const isAuthenticated = useAuthStore((s) => !!s.user);
 
   useEffect(() => {
     initTheme();
-  }, []);
+    checkAuth();
+  }, [checkAuth, initTheme]);
+
+  if (!authChecked) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--bg-base)", color: "var(--text-primary)" }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-5 h-5 rounded-full border-2 border-current/20 border-t-current animate-spin" />
+          <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Checking your session...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -58,7 +78,7 @@ export default function App() {
           path="/"
           element={
             <Navigate
-              to={useAuthStore.getState().isAuthenticated() ? "/dashboard" : "/login"}
+              to={isAuthenticated ? "/dashboard" : "/login"}
               replace
             />
           }

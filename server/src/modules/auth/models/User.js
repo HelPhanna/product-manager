@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const ROLES = {
+  SUPER_ADMIN: "super_admin",
   ADMIN: "admin",
   VIEWER: "viewer",
 };
@@ -35,8 +36,8 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: [ROLES.ADMIN, ROLES.VIEWER],
-        message: "Role must be either 'admin' or 'viewer'",
+        values: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.VIEWER],
+        message: "Role must be one of 'super_admin', 'admin', or 'viewer'",
       },
       default: ROLES.VIEWER,
     },
